@@ -2,13 +2,14 @@ package repository
 
 import (
 	"errors"
-	"fmt"
 	"latihan-web-server/entity"
 )
 
 type PersonRepository interface {
 	AddPerson(data entity.Person) (entity.Person, error)
-	GetPersons() ([]entity.Person, error)
+	GetPersons() []entity.Person
+	GetPersonById(id string) (entity.Person, error)
+	// DeletePersonById(id string) (string, error)
 }
 
 type personRepository struct {
@@ -20,21 +21,40 @@ func NewPersonRepository() PersonRepository {
 }
 
 func(pr *personRepository) AddPerson(data entity.Person) (entity.Person, error) {
-	err := append(pr.person, data)
-	if err == nil {
-		fmt.Printf("Error: %+v", err)
-		return data, errors.New("error add person in repository")
-	}
-
+	pr.person = append(pr.person, data)
 	return data, nil
 }
 
-func(pr *personRepository) GetPersons() ([]entity.Person, error) {
-	persons := []entity.Person{
-		{Name: "john", Gender: "male", Height: 168, Age: 23},
-		{Name: "jane", Gender: "female", Height: 170, Age: 22},
-		{Name: "alex", Gender: "male", Height: 180, Age: 30},
+func(pr *personRepository) GetPersons() []entity.Person{
+	return pr.person
+}
+
+func(pr *personRepository) GetPersonById(id string) (entity.Person, error) {
+
+	var dataPerson entity.Person
+
+	var persons []entity.Person
+
+	for _, person := range persons {
+		if person.ID == id {
+			dataPerson = person
+		} else {
+			return person, errors.New("Data Not Found")
+		}
+
 	}
 
-	return persons, nil
+	return dataPerson, nil
 }
+
+// func(pr *personRepository) DeletePersonById(id string) (string, error) {
+
+// 	for i, person := range persons {
+// 		if person.ID == id {
+// 			persons = append(persons[:i], persons[i+1:]...)
+// 			return "success deleted data" , nil
+// 		}
+// 	}
+
+// 	return "", nil
+// }

@@ -5,14 +5,20 @@ import (
 	"fmt"
 	"io/ioutil"
 	"latihan-web-server/formatter"
-	"latihan-web-server/helper"
+	"latihan-web-server/transport"
 	"latihan-web-server/usecase"
+	"latihan-web-server/validation"
 	"net/http"
+	"strings"
+
+	"github.com/go-playground/validator/v10"
 )
 
 type PersonHandler interface {
 	AddPerson(w http.ResponseWriter, r *http.Request)
 	GetPersons(w http.ResponseWriter, r *http.Request)
+	GetPersonById( w http.ResponseWriter, r *http.Request)
+	// DeletePersonById( w http.ResponseWriter, r *http.Request)
 }
 
 type personHandler struct {
@@ -29,7 +35,9 @@ func (ph *personHandler) AddPerson(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-	var p usecase.InputPerson
+	w.Header().Set("Content-Type", "application/json")
+
+	var p transport.InputPerson
 
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -40,6 +48,15 @@ func (ph *personHandler) AddPerson(w http.ResponseWriter, r *http.Request) {
 	
 	json.Unmarshal(reqBody, &p)
 
+	err = validator.New().Struct(p)
+	if err != nil {
+		errors := validation.FormatValidationError(err)
+		fmt.Printf("error: %+v", errors)
+		dataResponse := transport.ApiResponse(errors, http.StatusBadRequest, "err", nil)
+		json.NewEncoder(w).Encode(dataResponse)
+		return
+	}
+
 	result, err := ph.person.AddPerson(p)
 	if err != nil {
 		fmt.Printf("error: %s", err)
@@ -48,7 +65,7 @@ func (ph *personHandler) AddPerson(w http.ResponseWriter, r *http.Request) {
     }
 
 	pFormatter := formatter.ResponseFormatterPerson(result)
-	dataResponse := helper.ApiResponse("Success Add Person", http.StatusOK, "success", pFormatter)
+	dataResponse := transport.ApiResponse("Success Add Person", http.StatusAccepted, "success", pFormatter)
 	json.NewEncoder(w).Encode(dataResponse)
 }
 
@@ -58,7 +75,27 @@ func (ph *personHandler) GetPersons(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-	dataPerson, err := ph.person.GetPersons()
+	w.Header().Set("Content-Type", "application/json")
+
+	dataPersons := ph.person.GetPersons()
+
+	dataResponse := transport.ApiResponse("Success Get Data Persons", http.StatusAccepted, "success", dataPersons)
+
+	json.NewEncoder(w).Encode(dataResponse)
+}
+
+func (ph *personHandler) GetPersonById( w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+        http.Error(w, "Method is not supported.", http.StatusNotFound)
+        return
+    }
+
+	w.Header().Set("Content-Type", "application/json")
+
+	id := strings.TrimPrefix(r.URL.Path, "/person/")
+	fmt.Printf("id: %+v", id)
+
+	dataPerson, err := ph.person.GetPersonById(id)
 	if err != nil {
 		fmt.Printf("error: %s", err)
         w.WriteHeader(http.StatusNotFound)
@@ -66,4 +103,14 @@ func (ph *personHandler) GetPersons(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(dataPerson)
+}
+
+func (ph *personHandler) DeletePersonById( w http.ResponseWriter, r *http.Request) {
+	if r.Method != "DELETE" {
+        http.Error(w, "Method is not supported.", http.StatusNotFound)
+        return
+    }
+
+	id := r.URL.Query().Get("id")
+	fmt.Printf("id: %+v", id)
 }

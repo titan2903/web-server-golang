@@ -1,20 +1,19 @@
 package usecase
 
 import (
+	"encoding/hex"
 	"latihan-web-server/entity"
 	"latihan-web-server/repository"
+	"latihan-web-server/transport"
+
+	uuid "github.com/satori/go.uuid"
 )
 
-type InputPerson struct{
-	Name string `json:"name"`
-	Gender string `json:"gender"`
-	Height int64 `json:"height"`
-	Age int64 `json:"age"`
-}
-
 type PersonService interface {
-	AddPerson(data InputPerson) (entity.Person, error)
-	GetPersons() ([]entity.Person, error)
+	AddPerson(data transport.InputPerson) (entity.Person, error)
+	GetPersons() []entity.Person
+	GetPersonById(id string) (entity.Person, error)
+	// DeletePersonById(id string) (string, error)
 }
 
 type personService struct {
@@ -25,8 +24,11 @@ func NewPersonUsecase(pRepository repository.PersonRepository) PersonService {
 	return &personService{person: pRepository}
 }
 
-func (ps *personService) AddPerson(data InputPerson) (entity.Person, error) {
+func (ps *personService) AddPerson(data transport.InputPerson) (entity.Person, error) {
+	id := uuid.NewV4()
+
 	dataCreated := entity.Person{}
+	dataCreated.ID = hex.EncodeToString(id[:])
 	dataCreated.Name = data.Name
 	dataCreated.Gender = data.Gender
 	dataCreated.Height = data.Height
@@ -40,11 +42,20 @@ func (ps *personService) AddPerson(data InputPerson) (entity.Person, error) {
 	return personDesc, nil
 }
 
-func (ps *personService) GetPersons() ([]entity.Person, error) {
-	p, err := ps.person.GetPersons()
+func (ps *personService) GetPersons() []entity.Person {
+	pList := ps.person.GetPersons()
+	return pList
+}
+
+func (ps *personService) GetPersonById(id string) (entity.Person, error) {
+	p, err := ps.person.GetPersonById(id)
 	if err != nil {
 		return p, err
 	}
 
 	return p, nil
 }
+
+// func (ps *personService) DeletePersonById(id stirng) (string, error) {
+	
+// }

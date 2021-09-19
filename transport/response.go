@@ -1,4 +1,6 @@
-package helper
+package transport
+
+
 
 type Response struct {
 	Data interface{} `json:"data"`
@@ -25,3 +27,4 @@ func ApiResponse(message string, code int, status string, data interface{}) Resp
 
 	return jsonResponse
 }
+

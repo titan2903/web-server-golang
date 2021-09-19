@@ -15,7 +15,8 @@ func main()  {
 	pHandler := handler.NewPersonHandler(pUseCase)
 	
 	http.HandleFunc("/add", pHandler.AddPerson)
-	http.HandleFunc("/", pHandler.GetPersons)
+	http.HandleFunc("/persons", pHandler.GetPersons)
+	http.HandleFunc("/person/:id", pHandler.GetPersonById)
 	if err := http.ListenAndServe(":8000", nil); err != nil {
 		log.Fatal(err)
 	}
